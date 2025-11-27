@@ -10,7 +10,7 @@
 
     <script>
       async function loadData() {
-        const res = await fetch("PASTE_YOUR_PUBLISHED_CSV_URL_HERE");
+        const res = await fetch("https://docs.google.com/spreadsheets/d/e/2PACX-1vQXzaJTWFPZp14JeAWkVsXgua5yclwwbmwRqgKpOzj6MFD7XcB1dJhWsEJdwh6nbB2K7VIGPYw8j8NO/pub?gid=1266693431&single=true&output=csv");
         const text = await res.text();
         const rows = text.trim().split("\n").map(r => r.split(","));
         const table = document.getElementById("results");
