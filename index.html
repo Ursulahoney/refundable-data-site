@@ -34,7 +34,7 @@
       }
     </style>
 
-    <!-- CSV parser so commas inside text don't break the table -->
+    <!-- CSV parser -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   </head>
   <body>
@@ -42,6 +42,7 @@
     <table id="results"></table>
 
     <script>
+      // Make sure this CSV URL is for the *public_view* sheet
       const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQXzaJTWFPZp14JeAWkVsXgua5yclwwbmwRqgKpOzj6MFD7XcB1dJhWsEJdwh6nbB2K7VIGPYw8j8NO/pub?gid=1266693431&single=true&output=csv";
 
       async function loadData() {
@@ -50,37 +51,30 @@
 
         const parsed = Papa.parse(text.trim(), { header: true });
 
-        // Drop empty lines (keep rows that have anything filled in)
+        // Keep only rows that have at least one non-empty value
         const rows = parsed.data.filter(r =>
-          Object.values(r).some(v => v && String(v).trim() !== "")
+          r && Object.values(r).some(v => v && String(v).trim() !== "")
         );
 
-        // These must match your sheet headers exactly
-        const columns = [
-          "Found",
-          "State",
-          "Category",
-          "Title",
-          "Who is eligible",
-          "Claim link"
-        ];
+        const table = document.getElementById("results");
 
+        // Columns we want to *display* (not the sheet header names)
+        const columns = ["found", "state", "category", "title", "eligible", "claim"];
         const labels = {
-          "Found": "Found",
-          "State": "State",
-          "Category": "Category",
-          "Title": "Title",
-          "Who is eligible": "Who is eligible",
-          "Claim link": "Claim link"
+          found: "Found",
+          state: "State",
+          category: "Category",
+          title: "Title",
+          eligible: "Who is eligible",
+          claim: "Claim link"
         };
 
-        const table = document.getElementById("results");
+        // Build header row
         const thead = document.createElement("thead");
         const headerRow = document.createElement("tr");
-
-        columns.forEach(col => {
+        columns.forEach(colKey => {
           const th = document.createElement("th");
-          th.textContent = labels[col];
+          th.textContent = labels[colKey];
           headerRow.appendChild(th);
         });
         thead.appendChild(headerRow);
@@ -89,23 +83,69 @@
         const tbody = document.createElement("tbody");
 
         rows.forEach(row => {
+          const keys = Object.keys(row);
           const tr = document.createElement("tr");
-          columns.forEach(col => {
-            const td = document.createElement("td");
 
-            if (col === "Claim link" && row[col]) {
+          columns.forEach(colKey => {
+            const td = document.createElement("td");
+            let value = "";
+
+            if (colKey === "found") {
+              // id or date-like field
+              value =
+                row["Found"] ||
+                row["date_found"] ||
+                row["id"] ||
+                row["opportunity_id"] ||
+                row[keys[0]];  // first column as fallback
+            } else if (colKey === "state") {
+              value =
+                row["State"] ||
+                row["state"] ||
+                row["state_code"] ||
+                row[keys[1]];  // second column as fallback
+            } else if (colKey === "category") {
+              value =
+                row["Category"] ||
+                row["category"] ||
+                row["type"] ||
+                row[keys[3]];  // fourth column as fallback
+            } else if (colKey === "title") {
+              value =
+                row["Title"] ||
+                row["title"] ||
+                row["short_title"] ||
+                row[keys[4]];  // fifth column as fallback
+            } else if (colKey === "eligible") {
+              value =
+                row["Who is eligible"] ||
+                row["who_is_eligible"] ||
+                row["eligibility"] ||
+                row["description"] ||
+                row[keys[5]];  // sixth column as fallback
+            } else if (colKey === "claim") {
+              value =
+                row["Claim link"] ||
+                row["claim_url"] ||
+                row["claim_website"] ||
+                row["apply_url"] ||
+                row[keys[7]];  // eighth column as fallback
+            }
+
+            if (colKey === "claim" && value) {
               const link = document.createElement("a");
-              link.href = row[col];
+              link.href = value;
               link.target = "_blank";
               link.rel = "noopener noreferrer";
               link.textContent = "Go to site";
               td.appendChild(link);
             } else {
-              td.textContent = row[col] || "";
+              td.textContent = value || "";
             }
 
             tr.appendChild(td);
           });
+
           tbody.appendChild(tr);
         });
 
