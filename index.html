@@ -50,7 +50,7 @@
 
         // Parse CSV safely (handles commas inside quotes)
         const parsed = Papa.parse(text.trim(), { header: true });
-        const rows = parsed.data.filter(r => r.id); // drop empty lines
+const rows = parsed.data.filter(r => r.date_found);
 
         // Choose which columns to show and labels
         const columns = ["date_found", "state", "category", "title", "who_is_eligible", "apply_url"];
