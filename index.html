@@ -35,73 +35,79 @@
     </style>
 
     <!-- CSV parser so commas inside text don't break the table -->
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-  </head>
-  <body>
-    <h1>Refund Opportunities</h1>
-    <table id="results"></table>
-
     <script>
-      const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQXzaJTWFPZp14JeAWkVsXgua5yclwwbmwRqgKpOzj6MFD7XcB1dJhWsEJdwh6nbB2K7VIGPYw8j8NO/pub?gid=1266693431&single=true&output=csv"; // <-- paste the public_view CSV link here
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQXzaJTWFPZp14JeAWkVsXgua5yclwwbmwRqgKpOzj6MFD7XcB1dJhWsEJdwh6nbB2K7VIGPYw8j8NO/pub?gid=1266693431&single=true&output=csv";
 
-      async function loadData() {
-        const res = await fetch(CSV_URL);
-        const text = await res.text();
+  async function loadData() {
+    const res = await fetch(CSV_URL);
+    const text = await res.text();
 
-        // Parse CSV safely (handles commas inside quotes)
-        const parsed = Papa.parse(text.trim(), { header: true });
-const rows = parsed.data;   // no filter
+    const parsed = Papa.parse(text.trim(), { header: true });
 
-        // Choose which columns to show and labels
-        const columns = ["date_found", "state", "category", "title", "who_is_eligible", "apply_url"];
-        const labels = {
-          date_found: "Found",
-          state: "State",
-          category: "Category",
-          title: "Title",
-          who_is_eligible: "Who is eligible",
-          apply_url: "Claim link"
-        };
+    // Drop empty lines (keep rows that have anything filled in)
+    const rows = parsed.data.filter(r =>
+      Object.values(r).some(v => v && String(v).trim() !== "")
+    );
 
-        const table = document.getElementById("results");
-        const thead = document.createElement("thead");
-        const headerRow = document.createElement("tr");
+    // These must match your sheet headers exactly
+    const columns = [
+      "Found",
+      "State",
+      "Category",
+      "Title",
+      "Who is eligible",
+      "Claim link"
+    ];
 
-        columns.forEach(col => {
-          const th = document.createElement("th");
-          th.textContent = labels[col];
-          headerRow.appendChild(th);
-        });
-        thead.appendChild(headerRow);
-        table.appendChild(thead);
+    const labels = {
+      "Found": "Found",
+      "State": "State",
+      "Category": "Category",
+      "Title": "Title",
+      "Who is eligible": "Who is eligible",
+      "Claim link": "Claim link"
+    };
 
-        const tbody = document.createElement("tbody");
+    const table = document.getElementById("results");
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
 
-        rows.forEach(row => {
-          const tr = document.createElement("tr");
-          columns.forEach(col => {
-            const td = document.createElement("td");
+    columns.forEach(col => {
+      const th = document.createElement("th");
+      th.textContent = labels[col];
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
 
-            if (col === "apply_url" && row[col]) {
-              const link = document.createElement("a");
-              link.href = row[col];
-              link.target = "_blank";
-              link.rel = "noopener noreferrer";
-              link.textContent = "Go to site";
-              td.appendChild(link);
-            } else {
-              td.textContent = row[col] || "";
-            }
+    const tbody = document.createElement("tbody");
 
-            tr.appendChild(td);
-          });
-          tbody.appendChild(tr);
-        });
+    rows.forEach(row => {
+      const tr = document.createElement("tr");
+      columns.forEach(col => {
+        const td = document.createElement("td");
 
-        table.appendChild(tbody);
-      }
+        if (col === "Claim link" && row[col]) {
+          const link = document.createElement("a");
+          link.href = row[col];
+          link.target = "_blank";
+          link.rel = "noopener noreferrer";
+          link.textContent = "Go to site";
+          td.appendChild(link);
+        } else {
+          td.textContent = row[col] || "";
+        }
 
-      loadData();
-    </script>
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+  }
+
+  loadData();
+</script>
+
   </body>
 </html>
